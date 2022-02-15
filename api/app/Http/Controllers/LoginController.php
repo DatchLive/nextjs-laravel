@@ -18,11 +18,11 @@ class LoginController extends Controller
     public function login(LoginRequest $request): JsonResource
     {
         // ログイン成功時
-        if (Auth::attempt($request->all())){
+        if (Auth::attempt($request->all())) {
             $request->session()->regenerate();
             return new UserResource(Auth::user());
         }
-
+        // ログイン失敗時のエラーメッセージ
         throw ValidationException::withMessages([
             'loginFailed' => 'IDまたはパスワードが間違っています。'
         ]);
