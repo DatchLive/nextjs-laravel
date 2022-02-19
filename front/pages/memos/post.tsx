@@ -10,6 +10,11 @@ type MemoForm = {
   body: string;
 };
 
+type Validation = { 
+  title?: string;
+  body?: string;
+};
+
 const Post: NextPage = () => {
   const router = useRouter();
   
@@ -17,16 +22,17 @@ const Post: NextPage = () => {
     title: '',
     body: '',
   });
-  const [validation, setValidation] = useState<MemoForm>({
-    title: '',
-    body: '',
-  });
+  
+  const [validation, setValidation] = useState<Validation>({});
 
   const updateMemoForm = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setMemoForm({ ...memoForm, [e.target.name]: e.target.value });
   };
 
   const createMemo = () => {
+
+    setValidation({});
+    
     axiosApi
       // CSRF保護の初期化
       .get('/sanctum/csrf-cookie')
@@ -40,6 +46,17 @@ const Post: NextPage = () => {
           })
           .catch((err: AxiosError) => {
             console.log(err.response);
+            if (err.response?.status === 422) {
+              const errors = err.response?.data.errors;
+              const validationMessages: { [index: string]: string } = {} as Validation;
+              Object.keys(errors).map((key:string) => {
+                validationMessages[key] = errors[key][0];
+              });
+              setValidation(validationMessages);
+            }
+            if (err.response?.status === 500) {
+              alert('サーバーエラーが発生しました!!!!!!!!');
+            }
           });
       });
   };
@@ -59,6 +76,7 @@ const Post: NextPage = () => {
             value={memoForm.title}
             onChange={updateMemoForm}
           />
+          {validation.title && <p className='py-3 text-red-500'>{validation.title}</p>}
         </div>
         <div className='mb-5'>
           <div className='flex justify-start my-2'>
@@ -73,6 +91,7 @@ const Post: NextPage = () => {
             value={memoForm.body}
             onChange={updateMemoForm}
           />
+          {validation.body && <p className='py-3 text-red-500'>{validation.body}</p>}
         </div>
         <div className='text-center'>
           <button className='px-10 py-3 mt-8 bg-gray-700 cursor-pointer text-gray-50 sm:px-20 rounded-xl drop-shadow-md hover:bg-gray-600' onClick={createMemo}>
